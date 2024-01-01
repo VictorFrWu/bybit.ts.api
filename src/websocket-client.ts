@@ -734,7 +734,7 @@ export class WebsocketClient extends EventEmitter {
     return ws;
   }
 
-  private async onWsOpen(event, wsKey: WsKey) {
+  private async onWsOpen(event: any, wsKey: WsKey) {
     if (
       this.wsStore.isConnectionState(wsKey, WsConnectionStateEnum.CONNECTING)
     ) {
@@ -760,34 +760,18 @@ export class WebsocketClient extends EventEmitter {
       await this.sendAuthRequest(wsKey);
     }
 
-    // TODO: persistence not working yet for spot v1 topics
-    if (wsKey !== WS_KEY_MAP.spotPublic && wsKey !== WS_KEY_MAP.spotPrivate) {
-      const topics = [...this.wsStore.getTopics(wsKey)];
-      this.logger.info('Subscribing to topics', {
-        ...loggerCategory,
-        wsKey,
-        topics,
-      });
-      this.requestSubscribeTopics(wsKey, topics);
-    }
-
     this.wsStore.get(wsKey, true)!.activePingTimer = setInterval(
       () => this.ping(wsKey),
       this.options.pingInterval,
     );
   }
 
-  private onWsMessage(event, wsKey: WsKey) {
+  private onWsMessage(event: { data: any; }, wsKey: WsKey) {
     try {
       // any message can clear the pong timer - wouldn't get a message if the ws dropped
       this.clearPongTimer(wsKey);
 
       const msg = JSON.parse((event && event.data) || event);
-      // this.logger.silly('Received event', {
-      //   ...loggerCategory,
-      //   wsKey,
-      //   msg: JSON.stringify(msg),
-      // });
 
       if (isTopicSubscriptionConfirmation(msg)) {
         this.updatePendingTopicSubscriptionStatus(wsKey, msg);
@@ -808,17 +792,6 @@ export class WebsocketClient extends EventEmitter {
       }
       if (msg?.topic) {
         return this.emit('update', { ...msg, wsKey });
-      }
-
-      if (
-        // spot v1
-        msg?.code ||
-        // spot v3
-        msg?.type === 'error' ||
-        // usdc options
-        msg?.success === false
-      ) {
-        return this.emit('error', { ...msg, wsKey });
       }
 
       this.logger.warning('Unhandled/unrecognised ws event message', {
@@ -882,7 +855,7 @@ export class WebsocketClient extends EventEmitter {
     });
   }
 
-  private onWsClose(event, wsKey: WsKey) {
+  private onWsClose(event: any, wsKey: WsKey) {
     this.logger.info('Websocket connection closed', {
       ...loggerCategory,
       wsKey,
@@ -913,112 +886,7 @@ export class WebsocketClient extends EventEmitter {
     );
   }
 
-  /** @deprecated use "market: 'spotv3" client */
-  public subscribePublicSpotTrades(symbol: string, binary?: boolean) {
-    if (this.options.market !== 'spot') {
-      throw this.wrongMarketError('spot');
-    }
-
-    return this.tryWsSend(
-      WS_KEY_MAP.spotPublic,
-      JSON.stringify({
-        topic: 'trade',
-        event: 'sub',
-        symbol,
-        params: {
-          binary: !!binary,
-        },
-      }),
-    );
-  }
-
-  /** @deprecated use "market: 'spotv3" client */
-  public subscribePublicSpotTradingPair(symbol: string, binary?: boolean) {
-    if (this.options.market !== 'spot') {
-      throw this.wrongMarketError('spot');
-    }
-
-    return this.tryWsSend(
-      WS_KEY_MAP.spotPublic,
-      JSON.stringify({
-        symbol,
-        topic: 'realtimes',
-        event: 'sub',
-        params: {
-          binary: !!binary,
-        },
-      }),
-    );
-  }
-
-  /** @deprecated use "market: 'spotv3" client */
-  public subscribePublicSpotV1Kline(
-    symbol: string,
-    candleSize: KlineInterval,
-    binary?: boolean,
-  ) {
-    if (this.options.market !== 'spot') {
-      throw this.wrongMarketError('spot');
-    }
-
-    return this.tryWsSend(
-      WS_KEY_MAP.spotPublic,
-      JSON.stringify({
-        symbol,
-        topic: 'kline_' + candleSize,
-        event: 'sub',
-        params: {
-          binary: !!binary,
-        },
-      }),
-    );
-  }
-
   //ws.send('{"symbol":"BTCUSDT","topic":"depth","event":"sub","params":{"binary":false}}');
   //ws.send('{"symbol":"BTCUSDT","topic":"mergedDepth","event":"sub","params":{"binary":false,"dumpScale":1}}');
   //ws.send('{"symbol":"BTCUSDT","topic":"diffDepth","event":"sub","params":{"binary":false}}');
-
-  /** @deprecated use "market: 'spotv3" client */
-  public subscribePublicSpotOrderbook(
-    symbol: string,
-    depth: 'full' | 'merge' | 'delta',
-    dumpScale?: number,
-    binary?: boolean,
-  ) {
-    if (this.options.market !== 'spot') {
-      throw this.wrongMarketError('spot');
-    }
-
-    let topic: string;
-    switch (depth) {
-      case 'full': {
-        topic = 'depth';
-        break;
-      }
-      case 'merge': {
-        topic = 'mergedDepth';
-        if (!dumpScale) {
-          throw new Error('Dumpscale must be provided for merged orderbooks');
-        }
-        break;
-      }
-      case 'delta': {
-        topic = 'diffDepth';
-        break;
-      }
-    }
-
-    const msg: any = {
-      symbol,
-      topic,
-      event: 'sub',
-      params: {
-        binary: !!binary,
-      },
-    };
-    if (dumpScale) {
-      msg.params.dumpScale = dumpScale;
-    }
-    return this.tryWsSend(WS_KEY_MAP.spotPublic, JSON.stringify(msg));
-  }
 }
