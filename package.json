@@ -1,0 +1,48 @@
+{
+  "name": "bybit.ts.api",
+  "version": "1.0.0",
+  "description": "Complete & robust Node.js SDK for Bybit's REST APIs and WebSockets, with TypeScript & strong end to end tests.",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watchAll"
+  },
+  "keywords": [
+    "bybit",
+    "bybit api",
+    "api",
+    "websocket",
+    "rest",
+    "rest api",
+    "inverse",
+    "linear",
+    "usdt",
+    "trading bots",
+    "nodejs",
+    "node",
+    "trading",
+    "cryptocurrency",
+    "bitcoin",
+    "typescript"
+  ],
+  "author": "Victor WU (https://github.com)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wuhewuhe/bybit.ts.api"
+  },
+  "bugs": {
+    "url": "https://github.com/wuhewuhe/bybit.ts.api/issues"
+  },
+  "homepage": "https://github.com/wuhewuhe/bybit.ts.api#readme",
+  "devDependencies": {
+    "@babel/core": "^7.23.7",
+    "@babel/preset-env": "^7.23.7",
+    "@babel/preset-typescript": "^7.23.3",
+    "@types/jest": "^29.5.11",
+    "babel-jest": "^29.7.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.1",
+    "typescript": "^5.3.3"
+  }
+}
