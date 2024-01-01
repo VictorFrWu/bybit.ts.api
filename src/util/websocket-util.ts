@@ -93,6 +93,7 @@ const PRIVATE_TOPICS = [
   'order',
   'wallet',
   'greeks',
+  'dcp',
 ];
 
 export function isPrivateWsTopic(topic: string): boolean {
@@ -197,13 +198,6 @@ export function getMaxTopicsPerSubscribeEvent(
     }
   }
 }
-
-export const WS_ERROR_ENUM = {
-  NOT_AUTHENTICATED_SPOT_V3: '-1004',
-  API_ERROR_GENERIC: '10001',
-  API_SIGN_AUTH_FAILED: '10003',
-  USDC_OPTION_AUTH_FAILED: '3303006',
-};
 
 export function neverGuard(x: never, msg: string): Error {
   return new Error(`Unhandled value exception "x", ${msg}`);
