@@ -1,10 +1,10 @@
-import { KlineIntervalV3 } from '../shared';
+import { KlineIntervalV5 } from '../shared';
 import { CategoryV5, InstrumentStatusV5, OptionTypeV5 } from '../v5-shared';
 
 export interface GetKlineParamsV5 {
   category: 'spot' | 'linear' | 'inverse';
   symbol: string;
-  interval: KlineIntervalV3;
+  interval: KlineIntervalV5;
   start?: number;
   end?: number;
   limit?: number;
@@ -13,7 +13,7 @@ export interface GetKlineParamsV5 {
 export interface GetMarkPriceKlineParamsV5 {
   category: 'linear' | 'inverse';
   symbol: string;
-  interval: KlineIntervalV3;
+  interval: KlineIntervalV5;
   start?: number;
   end?: number;
   limit?: number;
@@ -22,7 +22,7 @@ export interface GetMarkPriceKlineParamsV5 {
 export interface GetIndexPriceKlineParamsV5 {
   category: 'linear' | 'inverse';
   symbol: string;
-  interval: KlineIntervalV3;
+  interval: KlineIntervalV5;
   start?: number;
   end?: number;
   limit?: number;
@@ -31,7 +31,7 @@ export interface GetIndexPriceKlineParamsV5 {
 export interface GetPremiumIndexPriceKlineParamsV5 {
   category: 'linear';
   symbol: string;
-  interval: KlineIntervalV3;
+  interval: KlineIntervalV5;
   start?: number;
   end?: number;
   limit?: number;
