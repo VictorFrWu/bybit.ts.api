@@ -1,4 +1,3 @@
-export * from './shared';
 export * from './v5-account';
 export * from './v5-asset';
 export * from './v5-market';

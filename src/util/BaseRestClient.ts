@@ -1,26 +1,24 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import axios, { AxiosRequestConfig, AxiosResponse, Method } from 'axios';
+import axios, { AxiosRequestConfig, AxiosResponse, Method } from "axios";
 
 import {
   APIID,
-  REST_CLIENT_TYPE_ENUM,
   RestClientOptions,
   RestClientType,
   getRestBaseUrl,
   parseRateLimitHeaders,
   serializeParams,
-} from './requestUtils';
-import { signMessage } from './node-support';
+} from "./requestUtils";
+import { signMessage } from "./node-support";
 
 const ENABLE_HTTP_TRACE =
-  typeof process === 'object' &&
-  typeof process.env === 'object' &&
+  typeof process === "object" &&
+  typeof process.env === "object" &&
   process.env.BYBITTRACE;
 
 if (ENABLE_HTTP_TRACE) {
-
   axios.interceptors.response.use((response) => {
-    console.log(new Date(), 'Response:', {
+    console.log(new Date(), "Response:", {
       request: {
         url: response.config.url,
         method: response.config.method,
@@ -59,7 +57,7 @@ interface UnsignedRequest<T> {
   paramsWithSign: T;
 }
 
-type SignMethod = 'v5auth';
+type SignMethod = "v5auth";
 
 export default abstract class BaseRestClient {
   private timeOffset: number | null = null;
@@ -95,7 +93,7 @@ export default abstract class BaseRestClient {
    */
   constructor(
     restOptions: RestClientOptions = {},
-    networkOptions: AxiosRequestConfig = {},
+    networkOptions: AxiosRequestConfig = {}
   ) {
     this.clientType = this.getClientType();
 
@@ -120,7 +118,7 @@ export default abstract class BaseRestClient {
       // custom request options based on axios specs - see: https://github.com/axios/axios#request-config
       ...networkOptions,
       headers: {
-        'x-referer': APIID,
+        "x-referer": APIID,
       },
     };
 
@@ -130,7 +128,7 @@ export default abstract class BaseRestClient {
 
     if (this.key && !this.secret) {
       throw new Error(
-        'API Key & Secret are both required for private endpoints',
+        "API Key & Secret are both required for private endpoints"
       );
     }
 
@@ -141,44 +139,44 @@ export default abstract class BaseRestClient {
   }
 
   get(endpoint: string, params?: any) {
-    return this._call('GET', endpoint, params, true);
+    return this._call("GET", endpoint, params, true);
   }
 
   getPrivate(endpoint: string, params?: any) {
-    return this._call('GET', endpoint, params, false);
+    return this._call("GET", endpoint, params, false);
   }
 
   post(endpoint: string, params?: any) {
-    return this._call('POST', endpoint, params, true);
+    return this._call("POST", endpoint, params, true);
   }
 
   postPrivate(endpoint: string, params?: any) {
-    return this._call('POST', endpoint, params, false);
+    return this._call("POST", endpoint, params, false);
   }
 
   deletePrivate(endpoint: string, params?: any) {
-    return this._call('DELETE', endpoint, params, false);
+    return this._call("DELETE", endpoint, params, false);
   }
 
   private async prepareSignParams<TParams = any>(
     method: Method,
     signMethod: SignMethod,
     params?: TParams,
-    isPublicApi?: true,
+    isPublicApi?: true
   ): Promise<UnsignedRequest<TParams>>;
 
   private async prepareSignParams<TParams = any>(
     method: Method,
     signMethod: SignMethod,
     params?: TParams,
-    isPublicApi?: false | undefined,
+    isPublicApi?: false | undefined
   ): Promise<SignedRequest<TParams>>;
 
   private async prepareSignParams<TParams extends SignedRequestContext = any>(
     method: Method,
     signMethod: SignMethod,
     params?: TParams,
-    isPublicApi?: boolean,
+    isPublicApi?: boolean
   ) {
     if (isPublicApi) {
       return {
@@ -188,7 +186,7 @@ export default abstract class BaseRestClient {
     }
 
     if (!this.key || !this.secret) {
-      throw new Error('Private endpoints require api and private keys set');
+      throw new Error("Private endpoints require api and private keys set");
     }
 
     if (this.timeOffset === null) {
@@ -207,7 +205,7 @@ export default abstract class BaseRestClient {
     method: Method,
     url: string,
     params?: any,
-    isPublicApi?: boolean,
+    isPublicApi?: boolean
   ): Promise<AxiosRequestConfig> {
     const options: AxiosRequestConfig = {
       ...this.globalRequestOptions,
@@ -216,7 +214,7 @@ export default abstract class BaseRestClient {
     };
 
     for (const key in params) {
-      if (typeof params[key] === 'undefined') {
+      if (typeof params[key] === "undefined") {
         delete params[key];
       }
     }
@@ -229,11 +227,28 @@ export default abstract class BaseRestClient {
     }
 
     const signResult = await this.prepareSignParams(
-        method,
-        'v5auth',
-        params,
-        isPublicApi,
-      );
+      method,
+      "v5auth",
+      params,
+      isPublicApi
+    );
+
+    const headers = {
+      'X-BAPI-SIGN-TYPE': 2,
+      'X-BAPI-API-KEY': this.key,
+      'X-BAPI-TIMESTAMP': signResult.timestamp,
+      'X-BAPI-SIGN': signResult.sign,
+      'X-BAPI-RECV-WINDOW': signResult.recvWindow,
+      ...options.headers,
+    };
+
+    if (method === 'GET') {
+      return {
+        ...options,
+        headers,
+        params: signResult.originalParams,
+      };
+    }
 
     return {
       ...options,
@@ -248,11 +263,11 @@ export default abstract class BaseRestClient {
     method: Method,
     endpoint: string,
     params?: any,
-    isPublicApi?: boolean,
+    isPublicApi?: boolean
   ): Promise<any> {
     // Sanity check to make sure it's only ever prefixed by one forward slash
     const requestUrl = [this.baseUrl, endpoint].join(
-      endpoint.startsWith('/') ? '' : '/',
+      endpoint.startsWith("/") ? "" : "/"
     );
 
     // Build a request and handle signature process
@@ -260,11 +275,11 @@ export default abstract class BaseRestClient {
       method,
       requestUrl,
       params,
-      isPublicApi,
+      isPublicApi
     );
 
     if (ENABLE_HTTP_TRACE) {
-      console.log('full request: ', options);
+      console.log("full request: ", options);
     }
 
     // Dispatch request
@@ -274,7 +289,7 @@ export default abstract class BaseRestClient {
           const perAPIRateLimits = this.options.parseAPIRateLimits
             ? parseRateLimitHeaders(
                 response.headers as Record<string, string>,
-                this.options.throwOnFailedRateLimitParse === true,
+                this.options.throwOnFailedRateLimitParse === true
               )
             : undefined;
 
@@ -325,7 +340,7 @@ export default abstract class BaseRestClient {
   private async signRequest<T extends SignedRequestContext | {} = {}>(
     data: T,
     method: Method,
-    signMethod: SignMethod,
+    signMethod: SignMethod
   ): Promise<SignedRequest<T>> {
     const timestamp = Date.now() + (this.timeOffset || 0);
 
@@ -333,10 +348,10 @@ export default abstract class BaseRestClient {
       originalParams: {
         ...data,
       },
-      sign: '',
+      sign: "",
       timestamp,
       recvWindow: 0,
-      serializedParams: '',
+      serializedParams: "",
     };
 
     if (!this.key || !this.secret) {
@@ -352,15 +367,15 @@ export default abstract class BaseRestClient {
     res.recvWindow = recvWindow;
 
     // usdc is different for some reason
-    if (signMethod === 'v5auth') {
+    if (signMethod === "v5auth") {
       const sortProperties = false;
       const signRequestParams =
-        method === 'GET'
+        method === "GET"
           ? serializeParams(
               res.originalParams as Record<string, string | undefined>,
               strictParamValidation,
               sortProperties,
-              encodeSerialisedValues,
+              encodeSerialisedValues
             )
           : JSON.stringify(res.originalParams);
 
@@ -369,10 +384,10 @@ export default abstract class BaseRestClient {
       res.sign = await signMessage(paramsStr, this.secret);
       res.serializedParams = signRequestParams;
 
-      // console.log('sign req: ', {
-      //   req: paramsStr,
-      //   sign: res.sign,
-      // });
+      console.log("sign req: ", {
+        req: paramsStr,
+        sign: res.sign,
+      });
       return res;
     }
     return res;
@@ -409,7 +424,7 @@ export default abstract class BaseRestClient {
 
       if (!serverTime || isNaN(serverTime)) {
         throw new Error(
-          `fetchServerTime() returned non-number: "${serverTime}" typeof(${typeof serverTime})`,
+          `fetchServerTime() returned non-number: "${serverTime}" typeof(${typeof serverTime})`
         );
       }
 
@@ -419,7 +434,7 @@ export default abstract class BaseRestClient {
       const avgDrift = (end - start) / 2;
       return Math.ceil(severTimeMs - end + avgDrift);
     } catch (e) {
-      console.error('Failed to fetch get time offset: ', e);
+      console.error("Failed to fetch get time offset: ", e);
       return 0;
     }
   }

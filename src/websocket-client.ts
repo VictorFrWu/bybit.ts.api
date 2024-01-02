@@ -26,7 +26,6 @@ import {
   getMaxTopicsPerSubscribeEvent,
   getWsKeyForTopic,
   getWsUrl,
-  isPrivateWsTopic,
   isTopicSubscriptionConfirmation,
   isTopicSubscriptionSuccess,
   isWsPong,
